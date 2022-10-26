@@ -117,7 +117,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="haarcascade_eye.xml" />
+    <None Include="haarcascade_eye.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Content Include="License-LGPL.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

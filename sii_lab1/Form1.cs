@@ -18,14 +18,56 @@ namespace sii_lab1
 {
     public partial class Form1 : Form
     {
-        private static CascadeClassifier classifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
+        private static CascadeClassifier classifierFace = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
+        private static CascadeClassifier classifierEye = new CascadeClassifier("haarcascade_eye.xml");
         private VideoCapture capture = null;
         private DsDevice[] webCams = null;
         private int selectedCameraId = 0;
+
         public Form1()
         {
             InitializeComponent();
         }
+
+        private Bitmap Find(Bitmap image)
+        {
+            Bitmap bitmap = new Bitmap(image);
+            Image<Bgr, byte> grayImage = new Image<Bgr, byte>(bitmap);
+
+            Rectangle[] faces = classifierFace.DetectMultiScale(grayImage, 1.01, 2);
+            foreach (Rectangle face in faces)
+            {
+                using (Graphics graphics = Graphics.FromImage(bitmap))
+                {
+                    using (Pen pen = new Pen(Color.Red, 3))
+                    {
+                        graphics.DrawRectangle(pen, face);
+                    }
+                }
+            }
+
+            int recCount = 9;
+            Rectangle[] eyes = classifierEye.DetectMultiScale(grayImage, 1.08, recCount); ;
+            while (eyes.Count() % 2 != 0 || eyes.Count() > 20)
+            {
+                eyes = classifierEye.DetectMultiScale(grayImage, 1.08, recCount);
+                recCount++;
+            }
+
+            foreach (Rectangle eye in eyes)
+            {
+                using (Graphics graphics = Graphics.FromImage(bitmap))
+                {
+                    using (Pen pen = new Pen(Color.Yellow, 3))
+                    {
+                        graphics.DrawRectangle(pen, eye);
+                    }
+                }
+            }
+            return bitmap;
+        }
+
+
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -39,18 +81,9 @@ namespace sii_lab1
                     string path = openFileDialog1.FileName;
                     pictureBox1.Image = Image.FromFile(path);
                     Bitmap bitmap = new Bitmap(pictureBox1.Image);
-                    Image<Bgr, byte> grayImage = new Image<Bgr, byte>(bitmap);
-                    Rectangle[] faces = classifier.DetectMultiScale(grayImage, 1.4, 0);
-                    foreach(Rectangle face in faces)
-                    {
-                        using(Graphics graphics = Graphics.FromImage(bitmap))
-                        {
-                            using(Pen pen = new Pen(Color.Yellow, 3))
-                            {
-                                graphics.DrawRectangle(pen, face);
-                            }
-                        }
-                    }
+                    bitmap = Find(bitmap);
+
+                    pictureBox1.Image = bitmap;
 
 
                     pictureBox1.Image = bitmap;
@@ -106,7 +139,9 @@ namespace sii_lab1
             {
                 Mat m = new Mat();
                 capture.Retrieve(m);
-                pictureBox1.Image = m.ToImage<Bgr, byte>().Flip(Emgu.CV.CvEnum.FlipType.Horizontal).Bitmap;
+                Bitmap outImage = Find(m.ToImage<Bgr, byte>().Flip(Emgu.CV.CvEnum.FlipType.Horizontal).Bitmap);
+                pictureBox1.Image = outImage;
+
             }
             catch(Exception ex)
             {
